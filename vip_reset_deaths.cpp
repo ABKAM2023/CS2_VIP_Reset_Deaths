@@ -49,6 +49,7 @@ bool OnTogglable(int iSlot, const char* szFeature, VIP_ToggleState eOldStatus, V
 	g_bResetDeaths[iSlot] = (eNewStatus == ENABLED);
 	return false;
 }
+
 bool VIP_ResetDeathsCommand(int iSlot, const char* szContent)
 {
 	if (!g_bResetDeaths[iSlot])
@@ -72,6 +73,28 @@ bool VIP_ResetDeathsCommand(int iSlot, const char* szContent)
 
 	g_pUtils->SetStateChanged(pPlayerController, "CCSPlayerController", "m_pActionTrackingServices");
 	g_pUtils->PrintToChat(iSlot, "%s", g_pVIPCore->VIP_GetTranslate("deaths_reset"));
+
+	return true;
+}
+
+bool ResetKillsCommand(int iSlot, const char* szContent)
+{
+	CCSPlayerController* pPlayerController = CCSPlayerController::FromSlot(iSlot);
+	if (!pPlayerController) return false;
+
+	CCSPlayerController_ActionTrackingServices* m_ATS = pPlayerController->m_pActionTrackingServices();
+
+	if (m_ATS->m_matchStats().m_iKills() == 0)
+	{
+		g_pUtils->PrintToChat(iSlot, "%s", g_pVIPCore->VIP_GetTranslate("kills_already_zero")); 
+		return true;
+	}
+
+	m_ATS->m_matchStats().m_iKills() = 0;
+
+	g_pUtils->SetStateChanged(pPlayerController, "CCSPlayerController", "m_pActionTrackingServices");
+
+	g_pUtils->PrintToChat(iSlot, "%s", g_pVIPCore->VIP_GetTranslate("kills_reset")); 
 
 	return true;
 }
@@ -116,6 +139,7 @@ void VIPResetDeaths::AllPluginsLoaded()
 	g_pVIPCore->VIP_RegisterFeature("ResetDeaths", VIP_BOOL, SELECTABLE, VIP_ResetDeathsCommand, nullptr);
 
 	g_pUtils->RegCommand(g_PLID, { "sm_rd", "mm_rd" }, { "!rd", "rd" }, VIP_ResetDeathsCommand);
+	g_pUtils->RegCommand(g_PLID, { "sm_rs", "mm_rs" }, { "!rs", "rs" }, ResetKillsCommand);      
 }
 
 const char* VIPResetDeaths::GetLicense()
@@ -125,7 +149,7 @@ const char* VIPResetDeaths::GetLicense()
 
 const char* VIPResetDeaths::GetVersion()
 {
-	return "1.0";
+	return "1.1";
 }
 
 const char* VIPResetDeaths::GetDate()
@@ -145,7 +169,7 @@ const char* VIPResetDeaths::GetAuthor()
 
 const char* VIPResetDeaths::GetDescription()
 {
-	return "A plugin to reset death count for VIP players.";
+	return "A plugin to reset death count for VIP players and kills for all players.";
 }
 
 const char* VIPResetDeaths::GetName()
